@@ -29,6 +29,8 @@ vim.g.undotree_WindowLayout = 2
 
 require("config.lazy")
 
+require("nvim-surround").setup()
+
 require("mason").setup()
 
 require("mason-lspconfig").setup({
@@ -43,6 +45,40 @@ vim.lsp.config["jinja_lsp"] = {
 	filetypes = { "htmldjango", "html" },
 }
 
+local dap = require("dap")
+dap.adapters.gdb = {
+	type = "executable",
+	command = "gdb",
+	args = { "--interpreter=dap", "--eval-command", "set print pretty on" },
+}
+
+dap.configurations.cpp = {
+	{
+		type = "gdb",
+		request = "launch",
+		name = "Launch gdb debugger",
+		program = function()
+			return vim.fn.input('Path to executable: ', vim.fn.getcwd() .. '/', 'file')
+		end,
+		cwd = "${workspaceFolder}",
+		stopAtBeginningOfMainSubprogram = false,
+	},
+}
+
+vim.keymap.set('n', '<leader>dbc', dap.continue)
+vim.keymap.set('n', '<leader>dbt', dap.terminate)
+vim.keymap.set('n', '<leader>dbl', dap.list_breakpoints)
+vim.keymap.set('n', '<leader>dbr', dap.clear_breakpoints)
+vim.keymap.set('n', '<leader>dbb', dap.toggle_breakpoint)
+vim.keymap.set('n', '<leader>dbsi', function()
+    dap.step_into({ askForTargets = true })
+end)
+vim.keymap.set('n', '<leader>dbso', dap.step_out)
+vim.keymap.set('n', '<leader>dbn', dap.step_over)
+vim.keymap.set('n', '<leader>dbp', dap.repl.toggle)
+vim.keymap.set('n', '<leader>dbv', function ()
+	require("dap.repl").execute(".scopes")
+end)
 
 vim.api.nvim_create_user_command("Format", function()
 	require("conform").format()
