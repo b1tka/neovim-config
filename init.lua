@@ -46,22 +46,34 @@ vim.lsp.config["jinja_lsp"] = {
 }
 
 local dap = require("dap")
-dap.adapters.gdb = {
-	type = "executable",
-	command = "gdb",
-	args = { "--interpreter=dap", "--eval-command", "set print pretty on" },
+dap.defaults.fallback.force_external_terminal = true
+dap.defaults.fallback.external_terminal = {
+	command = 'tmux',
+	args = { 'split-window', '-v' },
 }
-
+dap.adapters.cppdbg = {
+	id = "cppdbg",
+	type = "executable",
+	command = vim.fn.stdpath("data") .. "/mason/packages/cpptools/extension/debugAdapters/bin/OpenDebugAD7",
+}
 dap.configurations.cpp = {
 	{
-		type = "gdb",
+		type = "cppdbg",
 		request = "launch",
 		name = "Launch gdb debugger",
 		program = function()
 			return vim.fn.input('Path to executable: ', vim.fn.getcwd() .. '/', 'file')
 		end,
 		cwd = "${workspaceFolder}",
-		stopAtBeginningOfMainSubprogram = false,
+		stopAtEntry = true,
+		console = "externalTerminal",
+		setupCommands = {
+			{
+				text = "-enable-pretty-printing",
+				description = "enable pretty printing",
+				ignoreFailures = false,
+			},
+		},
 	},
 }
 
@@ -71,12 +83,12 @@ vim.keymap.set('n', '<leader>dbl', dap.list_breakpoints)
 vim.keymap.set('n', '<leader>dbr', dap.clear_breakpoints)
 vim.keymap.set('n', '<leader>dbb', dap.toggle_breakpoint)
 vim.keymap.set('n', '<leader>dbsi', function()
-    dap.step_into({ askForTargets = true })
+	dap.step_into({ askForTargets = true })
 end)
 vim.keymap.set('n', '<leader>dbso', dap.step_out)
 vim.keymap.set('n', '<leader>dbn', dap.step_over)
 vim.keymap.set('n', '<leader>dbp', dap.repl.toggle)
-vim.keymap.set('n', '<leader>dbv', function ()
+vim.keymap.set('n', '<leader>dbv', function()
 	require("dap.repl").execute(".scopes")
 end)
 
